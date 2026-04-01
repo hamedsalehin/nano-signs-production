@@ -8,7 +8,7 @@ import { useCart } from "@/lib/cart-context"
 import { products, Product } from "@/lib/products-data"
 
 const categories = [
-  "All22",
+  "All",
   "Outdoor",
   "Indoor",
   "Creative",
