@@ -39,7 +39,10 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/v1/admin/products')
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch('/api/v1/admin/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (res.ok) {
         const data = await res.json()
         setProducts(data.products)
@@ -54,9 +57,13 @@ export default function ProductsPage() {
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const token = localStorage.getItem('auth_token')
       const res = await fetch('/api/v1/admin/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData),
       })
 
@@ -77,8 +84,10 @@ export default function ProductsPage() {
     if (!confirm('Delete this product?')) return
 
     try {
+      const token = localStorage.getItem('auth_token')
       const res = await fetch(`/api/v1/admin/products/${id}`, {
         method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
       })
 
       if (res.ok) {
