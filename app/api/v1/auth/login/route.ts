@@ -1,34 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/db"
+import bcrypt from "bcryptjs"
+import jwt from "jsonwebtoken"
 
-// Mock user database (replace with Prisma when database is configured)
-const mockUsers = [
-  {
-    id: "admin-1",
-    email: "root",
-    password: "root",
-    role: "ADMIN",
-    name: "Administrator",
-  },
-  {
-    id: "user-1",
-    email: "user@example.com",
-    password: "password123",
-    role: "CUSTOMER",
-    name: "John Doe",
-  },
-]
-
-// Simple JWT-like token generation (for demo only - replace with real JWT in production)
-function generateDemoToken(userId: string, email: string, role: string): string {
-  const payload = {
-    userId,
-    email,
-    role,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 604800,
-  }
-  return Buffer.from(JSON.stringify(payload)).toString("base64")
-}
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-change-in-production"
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,8 +17,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user in mock database
-    const user = mockUsers.find((u) => u.email === email && u.password === password)
+    const user = await prisma.user.findUnique({
+      where: { email }
+    })
 
     if (!user) {
       return NextResponse.json(
@@ -52,7 +28,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const token = generateDemoToken(user.id, user.email, user.role)
+    const passwordMatch = await bcrypt.compare(password, user.password)
+
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      )
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    )
 
     return NextResponse.json({
       user: {
