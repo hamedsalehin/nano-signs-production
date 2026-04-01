@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { ShoppingCart, Calculator, RotateCcw, Plus, Minus, Save } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 
@@ -22,6 +22,9 @@ export function ConfiguratorSection() {
   const [cabinet, setCabinet] = useState("aluminum")
   const [withFrame, setWithFrame] = useState(true)
 
+  const [widthInput, setWidthInput] = useState("")
+  const [heightInput, setHeightInput] = useState("")
+
   const calculation = useMemo(() => {
     return calculateLEDDisplay(width, height, pixelPitch, environment, cabinet, withFrame)
   }, [width, height, pixelPitch, environment, cabinet, withFrame])
@@ -33,7 +36,20 @@ export function ConfiguratorSection() {
   const widthCm = Math.round(widthIn * 2.54)
   const heightCm = Math.round(heightIn * 2.54)
 
+  const isTypingWidth = useRef(false)
+  const isTypingHeight = useRef(false)
 
+  useEffect(() => {
+    if (!isTypingWidth.current) {
+      setWidthInput((calculation.widthIn + (withFrame ? 3.14 : 0)).toFixed(2))
+    }
+  }, [calculation.widthIn, withFrame])
+
+  useEffect(() => {
+    if (!isTypingHeight.current) {
+      setHeightInput((calculation.heightIn + (withFrame ? 3.14 : 0)).toFixed(2))
+    }
+  }, [calculation.heightIn, withFrame])
   const handleSaveProject = () => {
     const reportDate = new Date().toLocaleDateString()
     const content = `
@@ -153,13 +169,18 @@ ESTIMATED TOTAL: $${calculation.total.toLocaleString()} USD
                     <input
                       id="width-inch-input"
                       aria-label="Cabinet Size Width in inches"
-                      key={`frame-width-in-${width}-${pixelPitch}-${withFrame}`}
-                      type="number"
-                      step="0.01"
-                      defaultValue={(widthIn + (withFrame ? 3.14 : 0)).toFixed(2)}
+                      type="text"
+                      inputMode="decimal"
+                      value={widthInput}
+                      onFocus={() => { isTypingWidth.current = true }}
+                      onBlur={() => { 
+                        isTypingWidth.current = false
+                        setWidthInput((calculation.widthIn + (withFrame ? 3.14 : 0)).toFixed(2))
+                      }}
                       onChange={(e) => {
-                        const val = Number(e.target.value)
-                        if (val > 0) {
+                        setWidthInput(e.target.value)
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val > 0) {
                           const offset = withFrame ? 3.14 : 0
                           setWidth(Math.max(1, Math.floor((val - offset) / calculation.modWidth)))
                         }
@@ -220,13 +241,18 @@ ESTIMATED TOTAL: $${calculation.total.toLocaleString()} USD
                     <input
                       id="height-inch-input"
                       aria-label="Cabinet Size Height in inches"
-                      key={`frame-height-in-${height}-${pixelPitch}-${withFrame}`}
-                      type="number"
-                      step="0.01"
-                      defaultValue={(heightIn + (withFrame ? 3.14 : 0)).toFixed(2)}
+                      type="text"
+                      inputMode="decimal"
+                      value={heightInput}
+                      onFocus={() => { isTypingHeight.current = true }}
+                      onBlur={() => { 
+                        isTypingHeight.current = false
+                        setHeightInput((calculation.heightIn + (withFrame ? 3.14 : 0)).toFixed(2))
+                      }}
                       onChange={(e) => {
-                        const val = Number(e.target.value)
-                        if (val > 0) {
+                        setHeightInput(e.target.value)
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val > 0) {
                           const offset = withFrame ? 3.14 : 0
                           setHeight(Math.max(1, Math.floor((val - offset) / calculation.modHeight)))
                         }
